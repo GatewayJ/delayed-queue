@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	DEFAULT_SIZE = 10
+	DefalutSize = 10
 )
 
 type Queue struct {
@@ -51,7 +51,7 @@ func TimeQueueWithTimeStep(expireAfter time.Duration, cap int, tsp time.Duration
 }
 
 func NewEmpty() *Queue {
-	return &Queue{Data: make([]interface{}, 0, DEFAULT_SIZE), Mutex: &sync.Mutex{}}
+	return &Queue{Data: make([]interface{}, 0, DefalutSize), Mutex: &sync.Mutex{}}
 }
 func New(size int) *Queue {
 	return &Queue{Data: make([]interface{}, size, 2*size), Mutex: &sync.Mutex{}}
@@ -88,10 +88,9 @@ func (q *Queue) Tail() (interface{}, int) {
 	}
 	if !q.timeSpy {
 		return q.Data[len(q.Data)-1], len(q.Data) - 1
-	} else {
-		wrapper, index := q.Data[len(q.Data)-1], len(q.Data)-1
-		return wrapper.(TimeWrapper).Data, index
 	}
+	wrapper, index := q.Data[len(q.Data)-1], len(q.Data)-1
+	return wrapper.(TimeWrapper).Data, index
 }
 
 func (q *Queue) SafeTail() (interface{}, int) {
@@ -110,10 +109,8 @@ func (q *Queue) ValidHead() (interface{}, int) {
 
 			if !q.timeSpy {
 				return q.Data[i], i
-			} else {
-				return q.Data[i].(TimeWrapper).Data, i
 			}
-
+			return q.Data[i].(TimeWrapper).Data, i
 		}
 	}
 	return nil, -1
@@ -133,9 +130,8 @@ func (q *Queue) THead() (*TimeWrapper, int, error) {
 	if q.timeSpy {
 		tw := q.Data[0].(TimeWrapper)
 		return &tw, 0, nil
-	} else {
-		return nil, -1, fmt.Errorf("THead only use in a time queue,got by TimeQueue(time.Duration,int)")
 	}
+	return nil, -1, fmt.Errorf("THead only use in a time queue,got by TimeQueue(time.Duration,int)")
 }
 
 func (q *Queue) SafeTHead() (interface{}, int, error) {
@@ -153,9 +149,8 @@ func (q *Queue) ValidTail() (interface{}, int) {
 		if q.Data[i] != nil {
 			if !q.timeSpy {
 				return q.Data[i], i
-			} else {
-				return q.Data[i].(TimeWrapper).Data, i
 			}
+			return q.Data[i].(TimeWrapper).Data, i
 		}
 	}
 	return nil, -1
@@ -298,7 +293,7 @@ func (q *Queue) startTimeSpying() error {
 	go func(queue *Queue, er chan string) {
 		fmt.Println("start time spying, data in the queue can stay for " + q.ExpireAfter.String())
 		for {
-			if queue.timeSpy == false {
+			if !queue.timeSpy {
 				err <- "spying routine stops because: queue's timeSpy is false, make sure the queue is definition by q=TimeQueue(time.Duration,int)"
 				return
 			}
@@ -359,10 +354,8 @@ func (q *Queue) timingRemove() (bool, error) {
 		}
 		if len(q.Data) > 0 {
 			return q.timingRemove()
-		} else {
-			return true, nil
 		}
-	} else {
 		return true, nil
 	}
+	return true, nil
 }
